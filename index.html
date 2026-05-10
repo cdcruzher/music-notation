@@ -1,3 +1,4 @@
+<!DOCTYPE html>
 <html lang="es" class="scroll-smooth">
 <head>
     <meta charset="UTF-8">
@@ -142,4 +143,350 @@
             { id: 66, symbol: '∘', category: { es: 'Técnica', en: 'Technique' }, name: { es: 'Armónico', en: 'Harmonic' }, desc: { es: 'Ejecutar produciendo un sonido armónico.', en: 'Play producing a harmonic sound.' } },
             { id: 67, symbol: '𝄒', category: { es: 'Articulaciones', en: 'Articulations' }, name: { es: 'Marca de Respiración', en: 'Breath Mark' }, desc: { es: 'Pausa breve para tomar aire, sin afectar el tempo estricto.', en: 'Brief pause to take a breath, without affecting strict tempo.' } },
             { id: 68, symbol: '𝄓', category: { es: 'Forma', en: 'Form' }, name: { es: 'Cesura', en: 'Caesura' }, desc: { es: 'Pausa total e interrupción repentina del tiempo ("rieles").', en: 'Total pause and sudden interruption of time.' } },
-            { id: 69, symbol: '┌1.', category: { es: 'Forma', en: 'Form' }, name: { es: 'Casilla de 1ra Vez', en: 'Prima Volta' },
+            { id: 69, symbol: '┌1.', category: { es: 'Forma', en: 'Form' }, name: { es: 'Casilla de 1ra Vez', en: 'Prima Volta' }, desc: { es: 'Final que se toca la primera vez antes de repetir.', en: 'Ending played the first time before repeating.' } },
+            { id: 70, symbol: '┌2.', category: { es: 'Forma', en: 'Form' }, name: { es: 'Casilla de 2da Vez', en: 'Seconda Volta' }, desc: { es: 'Final que se toca tras la repetición, saltando la 1ra casilla.', en: 'Ending played after repeating, skipping the 1st ending.' } },
+            { id: 71, symbol: 'pizz.', category: { es: 'Técnica', en: 'Technique' }, name: { es: 'Pizzicato', en: 'Pizzicato' }, desc: { es: 'Tocar pellizcando las cuerdas con los dedos en lugar de usar el arco.', en: 'Play by plucking the strings with the fingers instead of bowing.' } },
+            { id: 72, symbol: 'arco', category: { es: 'Técnica', en: 'Technique' }, name: { es: 'Arco', en: 'Arco' }, desc: { es: 'Cancelar el pizzicato; volver a usar el arco en instrumentos de cuerda.', en: 'Cancel pizzicato; return to using the bow on string instruments.' } },
+            { id: 73, symbol: 'con sord.', category: { es: 'Técnica', en: 'Technique' }, name: { es: 'Con Sordina', en: 'Con sordino' }, desc: { es: 'Tocar con un dispositivo que amortigua el sonido y cambia el timbre.', en: 'Play with a device that dampens the sound and changes timbre.' } }
+        ];
+
+        // --- 2. GESTOR DE ESTADO GLOBAL ---
+        const state = {
+            view: 'dictionary',
+            lang: 'es',
+            dictionary: { filter: 'ALL', search: '' },
+            flashcard: { index: 0, isFlipped: false, shuffled: [] },
+            quiz: { question: null, options: [], score: { correct: 0, total: 0 }, selectedAnswer: null, isAnswered: false },
+            index: { expandedId: null }
+        };
+
+        // --- Lógica a prueba de fallos para iconos ---
+        const renderIcons = () => {
+            if (typeof lucide !== 'undefined') {
+                lucide.createIcons();
+            }
+        };
+
+        // --- 3. FUNCIONES DE VISTA (RENDERIZADO) ---
+        const app = {
+            init: () => {
+                app.shuffleFlashcards();
+                app.generateQuizQuestion();
+                app.renderNav();
+                app.renderMain();
+            },
+
+            toggleLanguage: () => {
+                state.lang = state.lang === 'es' ? 'en' : 'es';
+                document.getElementById('lang-toggle-text').innerText = uiDict[state.lang].langToggle;
+                state.dictionary.filter = 'ALL';
+                app.renderNav();
+                app.renderMain();
+            },
+
+            setView: (viewId) => {
+                state.view = viewId;
+                app.renderNav();
+                app.renderMain();
+            },
+
+            renderNav: () => {
+                const ui = uiDict[state.lang];
+                const navItems = [
+                    { id: 'dictionary', label: ui.navDict, icon: 'book-open' },
+                    { id: 'flashcards', label: ui.navFlash, icon: 'layers' },
+                    { id: 'quiz', label: ui.navQuiz, icon: 'check-square' },
+                    { id: 'index', label: ui.navIndex, icon: 'list' },
+                ];
+
+                const html = navItems.map(item => {
+                    const isActive = state.view === item.id;
+                    const activeClass = isActive ? 'bg-slate-800 text-emerald-400 shadow-sm' : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/50';
+                    return `<button onclick="window.app.setView('${item.id}')" class="flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-all ${activeClass}">
+                                <i data-lucide="${item.icon}" class="w-4 h-4"></i>
+                                <span class="hidden md:inline">${item.label}</span>
+                            </button>`;
+                }).join('');
+
+                document.getElementById('nav-container').innerHTML = html;
+                renderIcons();
+            },
+
+            renderMain: () => {
+                const container = document.getElementById('main-content');
+                if (state.view === 'dictionary') container.innerHTML = app.templates.dictionary();
+                if (state.view === 'flashcards') container.innerHTML = app.templates.flashcard();
+                if (state.view === 'quiz') container.innerHTML = app.templates.quiz();
+                if (state.view === 'index') container.innerHTML = app.templates.index();
+                renderIcons();
+            },
+
+            // --- LÓGICA DE DICCIONARIO ---
+            setDictFilter: (cat) => { state.dictionary.filter = cat; app.renderMain(); },
+            setDictSearch: (val) => { state.dictionary.search = val; app.renderMain(); },
+
+            // --- LÓGICA DE FLASHCARDS ---
+            shuffleFlashcards: () => {
+                state.flashcard.shuffled = [...musicData].sort(() => Math.random() - 0.5);
+            },
+            toggleFlashcardFlip: () => {
+                state.flashcard.isFlipped = !state.flashcard.isFlipped;
+                app.renderMain();
+            },
+            nextFlashcard: () => {
+                state.flashcard.isFlipped = false;
+                app.renderMain();
+                setTimeout(() => {
+                    state.flashcard.index = (state.flashcard.index + 1) % state.flashcard.shuffled.length;
+                    app.renderMain();
+                }, 150);
+            },
+
+            // --- LÓGICA DE QUIZ ---
+            generateQuizQuestion: () => {
+                const randomItem = musicData[Math.floor(Math.random() * musicData.length)];
+                let distractors = musicData.filter(item => item.id !== randomItem.id);
+                distractors = distractors.sort(() => Math.random() - 0.5).slice(0, 3);
+                
+                state.quiz.question = randomItem;
+                state.quiz.options = [randomItem, ...distractors].sort(() => Math.random() - 0.5);
+                state.quiz.selectedAnswer = null;
+                state.quiz.isAnswered = false;
+            },
+            answerQuiz: (id) => {
+                if (state.quiz.isAnswered) return;
+                state.quiz.selectedAnswer = id;
+                state.quiz.isAnswered = true;
+                if (id === state.quiz.question.id) {
+                    state.quiz.score.correct++;
+                }
+                state.quiz.score.total++;
+                app.renderMain();
+            },
+            nextQuizIter: () => {
+                app.generateQuizQuestion();
+                app.renderMain();
+            },
+
+            // --- LÓGICA DE ÍNDICE ---
+            toggleAccordion: (id) => {
+                state.index.expandedId = state.index.expandedId === id ? null : id;
+                app.renderMain();
+            },
+
+            // --- ENGINES DE RENDERIZADO ---
+            templates: {
+                dictionary: () => {
+                    const ui = uiDict[state.lang];
+                    const categoryKeys = [...new Set(musicData.map(item => item.category[state.lang]))];
+                    
+                    const filteredData = musicData.filter(d => {
+                        const matchesCategory = state.dictionary.filter === 'ALL' || d.category[state.lang] === state.dictionary.filter;
+                        const normSearch = normalizeStr(state.dictionary.search);
+                        const matchesSearch = normalizeStr(d.name[state.lang]).includes(normSearch) || 
+                                              normalizeStr(d.desc[state.lang]).includes(normSearch) || 
+                                              normalizeStr(d.category[state.lang]).includes(normSearch);
+                        return matchesCategory && matchesSearch;
+                    });
+
+                    const catButtons = `<button onclick="window.app.setDictFilter('ALL')" class="px-4 py-2 rounded-md text-sm font-medium transition-colors ${state.dictionary.filter === 'ALL' ? 'bg-emerald-600 text-white' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'}">${ui.all}</button>` + 
+                        categoryKeys.map(cat => 
+                            `<button onclick="window.app.setDictFilter('${cat}')" class="px-4 py-2 rounded-md text-sm font-medium transition-colors ${state.dictionary.filter === cat ? 'bg-emerald-600 text-white' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'}">${cat}</button>`
+                        ).join('');
+
+                    let contentHtml = '';
+                    if (filteredData.length === 0) {
+                        contentHtml = `<div class="py-12 text-center text-slate-500 font-mono bg-slate-900/50 rounded-lg border border-slate-800 border-dashed">${ui.emptySearch} "${state.dictionary.search}".</div>`;
+                    } else {
+                        contentHtml = `<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">` + 
+                            filteredData.map(item => `
+                                <div class="bg-slate-800 border border-slate-700 p-5 rounded-lg flex flex-col items-center text-center hover:border-emerald-500/50 transition-colors">
+                                    <span class="text-6xl font-serif text-slate-100 mb-4 h-20 flex items-center justify-center">${item.symbol}</span>
+                                    <h3 class="text-lg font-bold text-emerald-400 mb-2">${item.name[state.lang]}</h3>
+                                    <p class="text-sm text-slate-400">${item.desc[state.lang]}</p>
+                                    <span class="mt-4 text-xs font-mono text-slate-500 bg-slate-900 px-2 py-1 rounded">[${item.category[state.lang]}]</span>
+                                </div>
+                            `).join('') + `</div>`;
+                    }
+
+                    return `
+                        <div class="space-y-6">
+                            <div class="flex flex-col md:flex-row gap-4 justify-between items-start md:items-center">
+                                <div class="flex flex-wrap gap-2">${catButtons}</div>
+                                <div class="relative w-full md:w-64 shrink-0">
+                                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                        <i data-lucide="search" class="h-4 w-4 text-slate-400"></i>
+                                    </div>
+                                    <input type="text" placeholder="${ui.searchPlaceholder}" value="${state.dictionary.search}" 
+                                           oninput="window.app.setDictSearch(this.value)" autofocus
+                                           class="w-full pl-10 pr-4 py-2 bg-slate-900 border border-slate-700 rounded-md text-sm text-slate-200 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-all" />
+                                </div>
+                            </div>
+                            ${contentHtml}
+                        </div>
+                    `;
+                },
+
+                flashcard: () => {
+                    const ui = uiDict[state.lang];
+                    const currentItem = state.flashcard.shuffled[state.flashcard.index];
+                    
+                    if (!currentItem) return '';
+
+                    return `
+                        <div class="flex flex-col items-center justify-center py-10">
+                            <div class="text-slate-400 mb-6 font-mono text-sm">
+                                ${ui.cardCount} ${state.flashcard.index + 1} / ${state.flashcard.shuffled.length}
+                            </div>
+                            
+                            <div class="relative w-full max-w-md h-80 perspective-1000 cursor-pointer" onclick="window.app.toggleFlashcardFlip()">
+                                <div class="w-full h-full transition-transform duration-500 transform-style-preserve-3d ${state.flashcard.isFlipped ? 'rotate-y-180' : ''}">
+                                    <div class="absolute w-full h-full backface-hidden bg-slate-800 border-2 border-slate-700 rounded-xl flex items-center justify-center shadow-lg">
+                                       <span class="text-9xl font-serif text-slate-100">${currentItem.symbol}</span>
+                                       <span class="absolute bottom-4 text-slate-500 text-sm">${ui.clickReveal}</span>
+                                    </div>
+                                    <div class="absolute w-full h-full backface-hidden bg-slate-800 border-2 border-emerald-600 rounded-xl flex flex-col items-center justify-center shadow-lg rotate-y-180 p-6 text-center">
+                                        <h2 class="text-3xl font-bold text-emerald-400 mb-4">${currentItem.name[state.lang]}</h2>
+                                        <p class="text-lg text-slate-300">${currentItem.desc[state.lang]}</p>
+                                        <span class="mt-6 text-sm font-mono text-emerald-600/50">${ui.category}: ${currentItem.category[state.lang]}</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <button onclick="window.app.nextFlashcard()" class="mt-8 flex items-center gap-2 bg-emerald-600 hover:bg-emerald-500 text-white px-6 py-3 rounded-lg font-medium transition-colors">
+                                ${ui.nextCard} <i data-lucide="chevron-right" class="w-5 h-5"></i>
+                            </button>
+                        </div>
+                    `;
+                },
+
+                quiz: () => {
+                    const ui = uiDict[state.lang];
+                    const q = state.quiz;
+                    
+                    if (!q.question) return '';
+
+                    const optionsHtml = q.options.map(opt => {
+                        let btnClass = "bg-slate-700 hover:bg-slate-600 text-slate-200";
+                        if (q.isAnswered) {
+                            if (opt.id === q.question.id) btnClass = "bg-emerald-600 text-white border-emerald-400";
+                            else if (opt.id === q.selectedAnswer) btnClass = "bg-red-900/80 text-red-200 border-red-500";
+                            else btnClass = "bg-slate-800 text-slate-500 opacity-50";
+                        }
+                        return `<button ${q.isAnswered ? 'disabled' : ''} onclick="window.app.answerQuiz(${opt.id})" class="p-4 rounded-lg font-medium border border-transparent transition-all ${btnClass}">
+                                    ${opt.name[state.lang]}
+                                </button>`;
+                    }).join('');
+
+                    const nextBtnHtml = q.isAnswered ? `
+                        <button onclick="window.app.nextQuizIter()" class="w-full mt-6 flex items-center justify-center gap-2 bg-emerald-600 hover:bg-emerald-500 text-white p-4 rounded-lg font-bold transition-colors">
+                            ${ui.nextIter} <i data-lucide="refresh-cw" class="w-5 h-5"></i>
+                        </button>
+                    ` : '';
+
+                    return `
+                        <div class="max-w-2xl mx-auto py-8">
+                            <div class="flex justify-between items-center mb-8 p-4 bg-slate-800 rounded-lg border border-slate-700">
+                                <div class="flex items-center gap-2 text-slate-300">
+                                    <i data-lucide="award" class="text-emerald-500"></i>
+                                    <span class="font-mono text-lg">${ui.metrics}</span>
+                                </div>
+                                <div class="text-2xl font-mono font-bold text-emerald-400">
+                                    ${q.score.correct} / ${q.score.total}
+                                </div>
+                            </div>
+                            <div class="bg-slate-800 border border-slate-700 rounded-xl p-8 flex flex-col items-center">
+                                <h3 class="text-slate-400 text-sm uppercase tracking-widest mb-6">${ui.identify}</h3>
+                                <span class="text-8xl font-serif text-slate-100 mb-8">${q.question.symbol}</span>
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 w-full">
+                                    ${optionsHtml}
+                                </div>
+                            </div>
+                            ${nextBtnHtml}
+                        </div>
+                    `;
+                },
+
+                index: () => {
+                    const ui = uiDict[state.lang];
+                    
+                    const groupedData = musicData.reduce((acc, item) => {
+                        const cat = item.category[state.lang];
+                        if (!acc[cat]) acc[cat] = [];
+                        acc[cat].push(item);
+                        return acc;
+                    }, {});
+
+                    const sectionsHtml = Object.entries(groupedData).map(([category, items]) => {
+                        const itemsHtml = items.map(item => {
+                            const isExpanded = state.index.expandedId === item.id;
+                            const expandedClass = isExpanded ? 'bg-slate-800/50' : 'hover:bg-slate-800/30';
+                            
+                            const content = isExpanded ? `
+                                <div class="p-6 bg-slate-800/80 border-t border-slate-700/50">
+                                    <div class="flex flex-col md:flex-row gap-6 items-center md:items-start text-center md:text-left">
+                                        <span class="text-8xl font-serif text-slate-100 bg-slate-900 rounded-lg p-4 w-full md:w-auto flex justify-center border border-slate-700 shadow-inner">
+                                            ${item.symbol}
+                                        </span>
+                                        <div class="flex-1 mt-2">
+                                            <h4 class="text-xl font-bold text-emerald-400 mb-3">${item.name[state.lang]}</h4>
+                                            <p class="text-slate-300 leading-relaxed mb-4">${item.desc[state.lang]}</p>
+                                            <span class="text-xs font-mono text-slate-500 bg-slate-950 px-2 py-1 rounded border border-slate-800">
+                                                [${item.category[state.lang]}]
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+                            ` : '';
+
+                            return `
+                                <div class="border-b border-slate-800 last:border-0 transition-colors ${expandedClass}">
+                                    <button onclick="window.app.toggleAccordion(${item.id})" class="w-full flex items-center justify-between p-4 focus:outline-none">
+                                        <div class="flex items-center gap-4">
+                                            <span class="text-3xl font-serif text-slate-300 w-12 text-center">${item.symbol}</span>
+                                            <span class="font-medium text-slate-200">${item.name[state.lang]}</span>
+                                        </div>
+                                        <i data-lucide="${isExpanded ? 'chevron-up' : 'chevron-down'}" class="${isExpanded ? 'text-emerald-500' : 'text-slate-600'}"></i>
+                                    </button>
+                                    ${content}
+                                </div>
+                            `;
+                        }).join('');
+
+                        return `
+                            <div class="mb-8">
+                                <h3 class="text-sm font-bold text-emerald-600 uppercase tracking-widest mb-4 border-b border-slate-800 pb-2">
+                                    ${category}
+                                </h3>
+                                <div class="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden shadow-lg">
+                                    ${itemsHtml}
+                                </div>
+                            </div>
+                        `;
+                    }).join('');
+
+                    return `
+                        <div class="max-w-3xl mx-auto space-y-8">
+                            <div class="flex items-center gap-3 mb-6 p-4 bg-slate-800 rounded-lg border border-slate-700">
+                                <i data-lucide="list" class="text-emerald-500"></i>
+                                <h2 class="text-xl font-mono font-bold text-slate-200">${ui.indexTitle}</h2>
+                            </div>
+                            ${sectionsHtml}
+                        </div>
+                    `;
+                }
+            }
+        };
+
+        // --- 4. EXPOSICIÓN GLOBAL E INICIALIZACIÓN ---
+        window.app = app;
+        
+        // Ignición Directa (Bypass Race Condition)
+        window.app.init();
+
+    </script>
+</body>
+</html>
+
+
+```
