@@ -1,0 +1,178 @@
+```html
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Notación Sigma - Decodificador</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        /* Estilos base y variables de Tailwind personalizadas */
+        body { background-color: #020617; color: #e2e8f0; font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif; }
+        ::selection { background-color: rgba(16, 185, 129, 0.3); }
+        
+        /* Sistema 3D para Flashcards */
+        .perspective-1000 { perspective: 1000px; }
+        .transform-style-preserve-3d { transform-style: preserve-3d; }
+        .backface-hidden { backface-visibility: hidden; }
+        .rotate-y-180 { transform: rotateY(180deg); }
+        
+        /* Animaciones para el acordeón */
+        .accordion-content { transition: max-height 0.3s ease-out, padding 0.3s ease; max-height: 0; overflow: hidden; }
+        .accordion-content.expanded { max-height: 500px; }
+        
+        /* Estilos Glass Card (Identidad del Autor) */
+        .glass-card {
+            background: rgba(30, 41, 59, 0.7);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            transition: all 0.3s ease;
+        }
+        .glass-card:hover {
+            background: rgba(30, 41, 59, 0.9);
+            border-color: rgba(16, 185, 129, 0.5);
+            box-shadow: 0 10px 30px -10px rgba(16, 185, 129, 0.3);
+        }
+
+        /* Ocultar barra de desplazamiento */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #0f172a; }
+        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #475569; }
+    </style>
+</head>
+<body class="min-h-screen selection:bg-emerald-500/30">
+
+    <!-- Estructura Base del DOM -->
+    <header class="bg-slate-900 border-b border-slate-800 sticky top-0 z-20">
+        <div class="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <div class="w-8 h-8 bg-emerald-600 flex items-center justify-center rounded font-serif text-xl text-white font-bold">𝄞</div>
+                <h1 class="text-xl font-bold tracking-tight text-slate-100 hidden sm:block">
+                    Notación<span class="text-emerald-500">Sigma</span>
+                </h1>
+            </div>
+            <nav id="nav-container" class="flex flex-1 justify-center sm:justify-start sm:ml-8 gap-1 md:gap-2"></nav>
+            <button onclick="app.toggleLanguage()" class="flex items-center gap-2 bg-slate-800 hover:bg-slate-700 text-emerald-400 px-3 py-1.5 rounded-md text-sm font-mono font-bold transition-colors border border-slate-700">
+                <i data-lucide="globe" class="w-4 h-4"></i>
+                <span id="lang-toggle-text">EN</span>
+            </button>
+        </div>
+    </header>
+
+    <main id="main-content" class="max-w-6xl mx-auto px-4 py-8 min-h-[75vh]"></main>
+
+    <!-- Vector de Identidad y Monetización -->
+    <footer class="max-w-6xl mx-auto px-4 pb-12 mt-4">
+        <div class="flex flex-col md:flex-row justify-between items-center gap-6 glass-card p-6 rounded-3xl">
+            <div class="flex items-center gap-4">
+                <div class="h-16 w-16 rounded-2xl overflow-hidden border-2 border-slate-700 shadow-xl shrink-0">
+                    <img src="logo.jpg" alt="Carlos David" class="h-full w-full object-cover" onerror="this.src='https://ui-avatars.com/api/?name=CD&background=10b981&color=fff&size=128'">
+                </div>
+                <div>
+                    <h2 class="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-white to-slate-400">
+                        Carlos David
+                    </h2>
+                    <a href="https://cdcruzher.github.io/cdcruzher/" target="_blank" class="text-sm text-emerald-500 hover:text-emerald-400 font-mono transition-colors">
+                        @cdcruzher
+                    </a>
+                </div>
+            </div>
+            
+            <div class="flex flex-wrap justify-center gap-3">
+                <a href="https://cdcruzher.github.io/cdcruzher/" target="_blank" class="px-5 py-2.5 bg-slate-800 hover:bg-slate-700 border border-slate-600 text-slate-300 hover:text-white rounded-full text-sm font-medium transition-all flex items-center gap-2 group cursor-pointer">
+                    <i data-lucide="home" class="w-4 h-4 group-hover:scale-110 transition-transform"></i>
+                    Home
+                </a>
+                <a href="https://www.paypal.com/donate/?business=6EN68NHUTM2KQ&no_recurring=0&item_name=Thanks+for+your+support+Amigo%21&currency_code=USD" target="_blank" class="px-5 py-2.5 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-full text-sm font-medium transition-all flex items-center gap-2 group">
+                    <i data-lucide="heart" class="w-4 h-4 text-pink-500 group-hover:scale-110 transition-transform"></i>
+                    Support Work
+                </a>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // --- 1. ONTOLOGÍA Y DICCIONARIOS ---
+        
+        const normalizeStr = (str) => {
+            return str.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+        };
+
+        const uiDict = {
+            es: {
+                navDict: 'Diccionario', navFlash: 'Tarjetas (Recall)', navQuiz: 'Simulador', navIndex: 'Índice',
+                searchPlaceholder: 'Buscar símbolo o función...', emptySearch: 'No se detectaron resonancias semióticas para',
+                all: 'Todos', cardCount: 'Tarjeta', clickReveal: 'Click para revelar', category: 'Categoría',
+                nextCard: 'Siguiente Símbolo', metrics: 'Métricas de Precisión', identify: 'Identifica el símbolo',
+                nextIter: 'Siguiente Iteración', langToggle: 'EN', indexTitle: 'Índice Taxonómico'
+            },
+            en: {
+                navDict: 'Dictionary', navFlash: 'Flashcards', navQuiz: 'Simulator', navIndex: 'Index',
+                searchPlaceholder: 'Search symbol or function...', emptySearch: 'No semiotic resonances detected for',
+                all: 'All', cardCount: 'Card', clickReveal: 'Click to reveal', category: 'Category',
+                nextCard: 'Next Symbol', metrics: 'Accuracy Metrics', identify: 'Identify the symbol',
+                nextIter: 'Next Iteration', langToggle: 'ES', indexTitle: 'Taxonomic Index'
+            }
+        };
+
+        const musicData = [
+            { id: 1, symbol: '𝄞', category: { es: 'Claves', en: 'Clefs' }, name: { es: 'Clave de Sol', en: 'Treble Clef' }, desc: { es: 'Fija la nota Sol en la segunda línea del pentagrama. Usada para registros agudos.', en: 'Fixes the G note on the second line of the staff. Used for high registers.' } },
+            { id: 2, symbol: '𝄢', category: { es: 'Claves', en: 'Clefs' }, name: { es: 'Clave de Fa', en: 'Bass Clef' }, desc: { es: 'Fija la nota Fa en la cuarta línea. Usada para registros graves.', en: 'Fixes the F note on the fourth line. Used for low registers.' } },
+            { id: 3, symbol: '𝄡', category: { es: 'Claves', en: 'Clefs' }, name: { es: 'Clave de Do', en: 'C Clef (Alto/Tenor)' }, desc: { es: 'Fija la nota Do en la línea central (o tercera). Usada para registros medios.', en: 'Fixes the C note on the center line. Used for middle registers.' } },
+            { id: 4, symbol: '𝄥', category: { es: 'Claves', en: 'Clefs' }, name: { es: 'Clave de Percusión', en: 'Percussion Clef' }, desc: { es: 'Indica que el pentagrama no tiene altura definida, usado para instrumentos rítmicos.', en: 'Indicates the staff has no definite pitch, used for rhythmic instruments.' } },
+            { id: 5, symbol: '𝅜', category: { es: 'Figuras', en: 'Notes' }, name: { es: 'Cuadrada (Breve)', en: 'Double Whole Note (Breve)' }, desc: { es: 'Duración de 8 tiempos. Rara en notación moderna.', en: 'Duration of 8 beats. Rare in standard modern notation.' } },
+            { id: 6, symbol: '𝅝', category: { es: 'Figuras', en: 'Notes' }, name: { es: 'Redonda', en: 'Whole Note (Semibreve)' }, desc: { es: 'Duración de 4 tiempos (en compás de 4/4).', en: 'Duration of 4 beats (in 4/4 time).' } },
+            { id: 7, symbol: '𝅗𝅥', category: { es: 'Figuras', en: 'Notes' }, name: { es: 'Blanca', en: 'Half Note (Minim)' }, desc: { es: 'Duración de 2 tiempos. Mitad de una redonda.', en: 'Duration of 2 beats. Half of a whole note.' } },
+            { id: 8, symbol: '𝅘𝅥', category: { es: 'Figuras', en: 'Notes' }, name: { es: 'Negra', en: 'Quarter Note (Crotchet)' }, desc: { es: 'Duración de 1 tiempo. Base del pulso en compases por cuartos.', en: 'Duration of 1 beat. Base pulse in quarter-time signatures.' } },
+            { id: 9, symbol: '𝅘𝅥𝅮', category: { es: 'Figuras', en: 'Notes' }, name: { es: 'Corchea', en: 'Eighth Note (Quaver)' }, desc: { es: 'Duración de 1/2 tiempo.', en: 'Duration of 1/2 beat.' } },
+            { id: 10, symbol: '𝅘𝅥𝅯', category: { es: 'Figuras', en: 'Notes' }, name: { es: 'Semicorchea', en: 'Sixteenth Note (Semiquaver)' }, desc: { es: 'Duración de 1/4 de tiempo.', en: 'Duration of 1/4 beat.' } },
+            { id: 11, symbol: '𝅘𝅥𝅰', category: { es: 'Figuras', en: 'Notes' }, name: { es: 'Fusa', en: 'Thirty-second Note' }, desc: { es: 'Duración de 1/8 de tiempo. Tiene tres corchetes.', en: 'Duration of 1/8 beat. Has three flags.' } },
+            { id: 12, symbol: '𝅘𝅥𝅱', category: { es: 'Figuras', en: 'Notes' }, name: { es: 'Semifusa', en: 'Sixty-fourth Note' }, desc: { es: 'Duración de 1/16 de tiempo. Tiene cuatro corchetes.', en: 'Duration of 1/16 beat. Has four flags.' } },
+            { id: 13, symbol: '𝄺', category: { es: 'Silencios', en: 'Rests' }, name: { es: 'Silencio de Cuadrada', en: 'Double Whole Rest' }, desc: { es: 'Pausa de 8 tiempos.', en: 'Pause of 8 beats.' } },
+            { id: 14, symbol: '𝄻', category: { es: 'Silencios', en: 'Rests' }, name: { es: 'Silencio de Redonda', en: 'Whole Rest' }, desc: { es: 'Pausa de 4 tiempos. Se cuelga de la cuarta línea.', en: 'Pause of 4 beats. Hangs from the fourth line.' } },
+            { id: 15, symbol: '𝄼', category: { es: 'Silencios', en: 'Rests' }, name: { es: 'Silencio de Blanca', en: 'Half Rest' }, desc: { es: 'Pausa de 2 tiempos. Se apoya en la tercera línea.', en: 'Pause of 2 beats. Sits on the third line.' } },
+            { id: 16, symbol: '𝄽', category: { es: 'Silencios', en: 'Rests' }, name: { es: 'Silencio de Negra', en: 'Quarter Rest' }, desc: { es: 'Pausa de 1 tiempo.', en: 'Pause of 1 beat.' } },
+            { id: 17, symbol: '𝄾', category: { es: 'Silencios', en: 'Rests' }, name: { es: 'Silencio de Corchea', en: 'Eighth Rest' }, desc: { es: 'Pausa de 1/2 tiempo.', en: 'Pause of 1/2 beat.' } },
+            { id: 18, symbol: '𝄿', category: { es: 'Silencios', en: 'Rests' }, name: { es: 'Silencio de Semicorchea', en: 'Sixteenth Rest' }, desc: { es: 'Pausa de 1/4 de tiempo.', en: 'Pause of 1/4 beat.' } },
+            { id: 19, symbol: '𝅀', category: { es: 'Silencios', en: 'Rests' }, name: { es: 'Silencio de Fusa', en: 'Thirty-second Rest' }, desc: { es: 'Pausa de 1/8 de tiempo.', en: 'Pause of 1/8 beat.' } },
+            { id: 20, symbol: '♯', category: { es: 'Alteraciones', en: 'Accidentals' }, name: { es: 'Sostenido', en: 'Sharp' }, desc: { es: 'Eleva la altura de la nota en un semitono.', en: 'Raises the pitch of the note by one semitone.' } },
+            { id: 21, symbol: '♭', category: { es: 'Alteraciones', en: 'Accidentals' }, name: { es: 'Bemol', en: 'Flat' }, desc: { es: 'Desciende la altura de la nota en un semitono.', en: 'Lowers the pitch of the note by one semitone.' } },
+            { id: 22, symbol: '♮', category: { es: 'Alteraciones', en: 'Accidentals' }, name: { es: 'Becuadro', en: 'Natural' }, desc: { es: 'Cancela el efecto de cualquier alteración previa.', en: 'Cancels the effect of any previous accidental.' } },
+            { id: 23, symbol: '𝄪', category: { es: 'Alteraciones', en: 'Accidentals' }, name: { es: 'Doble Sostenido', en: 'Double Sharp' }, desc: { es: 'Eleva la altura de la nota en dos semitonos.', en: 'Raises the pitch of the note by two semitones.' } },
+            { id: 24, symbol: '𝄫', category: { es: 'Alteraciones', en: 'Accidentals' }, name: { es: 'Doble Bemol', en: 'Double Flat' }, desc: { es: 'Desciende la altura de la nota en dos semitonos.', en: 'Lowers the pitch of the note by two semitones.' } },
+            { id: 25, symbol: '𝆏𝆏𝆏', category: { es: 'Dinámicas', en: 'Dynamics' }, name: { es: 'Pianississimo', en: 'Pianississimo' }, desc: { es: 'Extremadamente suave.', en: 'Extremely soft.' } },
+            { id: 26, symbol: '𝆏𝆏', category: { es: 'Dinámicas', en: 'Dynamics' }, name: { es: 'Pianissimo', en: 'Pianissimo' }, desc: { es: 'Intensidad muy suave.', en: 'Very soft intensity.' } },
+            { id: 27, symbol: '𝆏', category: { es: 'Dinámicas', en: 'Dynamics' }, name: { es: 'Piano', en: 'Piano' }, desc: { es: 'Intensidad suave.', en: 'Soft intensity.' } },
+            { id: 28, symbol: '𝆐', category: { es: 'Dinámicas', en: 'Dynamics' }, name: { es: 'Mezzopiano', en: 'Mezzopiano' }, desc: { es: 'Intensidad moderadamente suave.', en: 'Moderately soft intensity.' } },
+            { id: 29, symbol: '𝆎𝆑', category: { es: 'Dinámicas', en: 'Dynamics' }, name: { es: 'Mezzoforte', en: 'Mezzoforte' }, desc: { es: 'Intensidad moderadamente fuerte.', en: 'Moderately loud intensity.' } },
+            { id: 30, symbol: '𝆑', category: { es: 'Dinámicas', en: 'Dynamics' }, name: { es: 'Forte', en: 'Forte' }, desc: { es: 'Intensidad fuerte.', en: 'Loud intensity.' } },
+            { id: 31, symbol: '𝆑𝆑', category: { es: 'Dinámicas', en: 'Dynamics' }, name: { es: 'Fortissimo', en: 'Fortissimo' }, desc: { es: 'Intensidad muy fuerte.', en: 'Very loud intensity.' } },
+            { id: 32, symbol: '𝆑𝆑𝆑', category: { es: 'Dinámicas', en: 'Dynamics' }, name: { es: 'Fortississimo', en: 'Fortississimo' }, desc: { es: 'Extremadamente fuerte.', en: 'Extremely loud.' } },
+            { id: 33, symbol: '𝆑𝆏', category: { es: 'Dinámicas', en: 'Dynamics' }, name: { es: 'Forte-piano', en: 'Forte-piano' }, desc: { es: 'Ataque fuerte seguido de intensidad suave.', en: 'Loud attack immediately followed by soft intensity.' } },
+            { id: 34, symbol: '𝆑𝆔', category: { es: 'Dinámicas', en: 'Dynamics' }, name: { es: 'Sforzando (sfz)', en: 'Sforzando (sfz)' }, desc: { es: 'Acento fuerte y repentino.', en: 'A sudden, strong accent.' } },
+            { id: 35, symbol: '>', category: { es: 'Articulaciones', en: 'Articulations' }, name: { es: 'Acento', en: 'Accent' }, desc: { es: 'Atacar con mayor fuerza.', en: 'Play with greater force.' } },
+            { id: 36, symbol: '.', category: { es: 'Articulaciones', en: 'Articulations' }, name: { es: 'Staccato', en: 'Staccato' }, desc: { es: 'Nota acortada y separada.', en: 'Shortened, detached note.' } },
+            { id: 37, symbol: '▼', category: { es: 'Articulaciones', en: 'Articulations' }, name: { es: 'Staccatissimo', en: 'Staccatissimo' }, desc: { es: 'Más corto y percusivo que el staccato.', en: 'Shorter and more percussive than staccato.' } },
+            { id: 38, symbol: '−', category: { es: 'Articulaciones', en: 'Articulations' }, name: { es: 'Tenuto', en: 'Tenuto' }, desc: { es: 'Mantener la nota su valor completo.', en: 'Hold the note for its full value.' } },
+            { id: 39, symbol: 'ʌ', category: { es: 'Articulaciones', en: 'Articulations' }, name: { es: 'Marcato', en: 'Marcato' }, desc: { es: 'Acento muy marcado.', en: 'Very marked, forceful accent.' } },
+            { id: 40, symbol: '𝄐', category: { es: 'Articulaciones', en: 'Articulations' }, name: { es: 'Calderón (Fermata)', en: 'Fermata' }, desc: { es: 'Prolonga la nota a discreción.', en: 'Prolongs the note at the performer\'s discretion.' } },
+            { id: 61, symbol: '𝅪', category: { es: 'Articulaciones', en: 'Articulations' }, name: { es: 'Trémolo', en: 'Tremolo' }, desc: { es: 'Repetición rápida de una nota.', en: 'Rapid repetition of a single note.' } },
+            { id: 62, symbol: 'gliss.', category: { es: 'Articulaciones', en: 'Articulations' }, name: { es: 'Glissando', en: 'Glissando' }, desc: { es: 'Deslizamiento continuo entre alturas.', en: 'Continuous slide between pitches.' } },
+            { id: 63, symbol: '⁀', category: { es: 'Articulaciones', en: 'Articulations' }, name: { es: 'Ligadura de Expresión', en: 'Slur' }, desc: { es: 'Ejecutar unido y sin interrupción (legato).', en: 'Play connected and without interruption (legato).' } },
+            { id: 64, symbol: '‿', category: { es: 'Articulaciones', en: 'Articulations' }, name: { es: 'Ligadura de Prolongación', en: 'Tie' }, desc: { es: 'Suma el valor rítmico de notas de igual altura.', en: 'Adds the rhythmic value of notes of the same pitch.' } },
+            { id: 41, symbol: '𝆖', category: { es: 'Ornamentos', en: 'Ornaments' }, name: { es: 'Trino', en: 'Trill' }, desc: { es: 'Alternancia rápida con la nota superior.', en: 'Rapid alternation with the upper note.' } },
+            { id: 42, symbol: '𝆗', category: { es: 'Ornamentos', en: 'Ornaments' }, name: { es: 'Mordente', en: 'Mordent' }, desc: { es: 'Alternancia rápida única.', en: 'Single rapid alternation.' } },
+            { id: 43, symbol: '𝆘', category: { es: 'Ornamentos', en: 'Ornaments' }, name: { es: 'Grupeto', en: 'Turn' }, desc: { es: 'Giro alrededor de la nota principal.', en: 'Turn around the main note.' } },
+            { id: 44, symbol: '𝆕', category: { es: 'Ornamentos', en: 'Ornaments' }, name: { es: 'Apoyatura', en: 'Appoggiatura' }, desc: { es: 'Nota de adorno que toma valor de la principal.', en: 'Grace note that takes value from the main note.' } },
+            { id: 45, symbol: '𝄆', category: { es: 'Forma', en: 'Form' }, name: { es: 'Barra de Repetición (Inicio)', en: 'Repeat Barline (Start)' }, desc: { es: 'Inicio de sección a repetir.', en: 'Start of a section to repeat.' } },
+            { id: 46, symbol: '𝄇', category: { es: 'Forma', en: 'Form' }, name: { es: 'Barra de Repetición (Fin)', en: 'Repeat Barline (End)' }, desc: { es: 'Volver al principio o al inicio de repetición.', en: 'Return to the beginning or start repeat.' } },
+            { id: 47, symbol: '𝄋', category: { es: 'Forma', en: 'Form' }, name: { es: 'Dal Segno', en: 'Dal Segno' }, desc: { es: 'Saltar a la marca del signo.', en: 'Jump to the sign mark.' } },
+            { id: 48, symbol: '𝄌', category: { es: 'Forma', en: 'Form' }, name: { es: 'Coda', en: 'Coda' }, desc: { es: 'Salto a la sección final.', en: 'Jump to the final section.' } },
+            { id: 49, symbol: '𝄀', category: { es: 'Forma', en: 'Form' }, name: { es: 'Barra Simple', en: 'Single Barline' }, desc: { es: 'Separa los compases.', en: 'Separates measures.' } },
+            { id: 50, symbol: '𝄂', category: { es: 'Forma', en: 'Form' }, name: { es: 'Doble Barra', en: 'Double Barline' }, desc: { es: 'Final de sección o cambio de tono/compás.', en: 'End of section or change in key/time.' } },
+            { id: 51, symbol: '𝄴', category: { es: 'Tiempo', en: 'Time' }, name: { es: 'Compasillo (4/4)', en: 'Common Time (4/4)' }, desc: { es: 'Compás de cuatro cuartos.', en: 'Four-four time signature.' } },
+            { id: 52, symbol: '𝄵', category: { es: 'Tiempo', en: 'Time' }, name: { es: 'Compás Binario', en: 'Cut Time' }, desc: { es: 'Compás de 2/2 (Alla Breve).', en: 'Two-two time signature (Alla Breve).' } },
+            { id: 53, symbol: '𝆒', category: { es: 'Tiempo', en: 'Time' }, name: { es: 'Crescendo', en: 'Crescendo' }, desc: { es: 'Aumento gradual de intensidad.', en: 'Gradual increase in intensity.' } },
+            { id: 54, symbol: '𝆓
