@@ -20,19 +20,6 @@
         /* Animaciones para el acordeón */
         .accordion-content { transition: max-height 0.3s ease-out, padding 0.3s ease; max-height: 0; overflow: hidden; }
         .accordion-content.expanded { max-height: 500px; }
-        
-        /* Estilos Glass Card (Identidad del Autor) */
-        .glass-card {
-            background: rgba(30, 41, 59, 0.7);
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            transition: all 0.3s ease;
-        }
-        .glass-card:hover {
-            background: rgba(30, 41, 59, 0.9);
-            border-color: rgba(16, 185, 129, 0.5);
-            box-shadow: 0 10px 30px -10px rgba(16, 185, 129, 0.3);
-        }
 
         /* Ocultar barra de desplazamiento */
         ::-webkit-scrollbar { width: 8px; }
@@ -41,7 +28,7 @@
         ::-webkit-scrollbar-thumb:hover { background: #475569; }
     </style>
 </head>
-<body class="min-h-screen selection:bg-emerald-500/30 flex flex-col relative overflow-x-hidden">
+<body class="min-h-screen selection:bg-emerald-500/30">
 
     <!-- Estructura Base del DOM -->
     <header class="bg-slate-900 border-b border-slate-800 sticky top-0 z-20">
@@ -60,37 +47,7 @@
         </div>
     </header>
 
-    <main id="main-content" class="max-w-6xl mx-auto w-full px-4 py-8 flex-grow"></main>
-
-    <!-- Vector de Identidad y Monetización -->
-    <footer class="max-w-6xl mx-auto px-4 pb-12 mt-4 w-full">
-        <div class="flex flex-col md:flex-row justify-between items-center gap-6 glass-card p-6 rounded-3xl">
-            <div class="flex items-center gap-4">
-                <div class="h-16 w-16 rounded-2xl overflow-hidden border-2 border-slate-700 shadow-xl shrink-0">
-                    <img src="logo.jpg" alt="Carlos David" class="h-full w-full object-cover" onerror="this.src='https://ui-avatars.com/api/?name=CD&background=10b981&color=fff&size=128'">
-                </div>
-                <div>
-                    <h2 class="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-white to-slate-400">
-                        Carlos David
-                    </h2>
-                    <a href="https://cdcruzher.github.io/cdcruzher/" target="_blank" class="text-sm text-emerald-500 hover:text-emerald-400 font-mono transition-colors">
-                        @cdcruzher
-                    </a>
-                </div>
-            </div>
-            
-            <div class="flex flex-wrap justify-center gap-3">
-                <a href="https://cdcruzher.github.io/cdcruzher/" target="_blank" class="px-5 py-2.5 bg-slate-800 hover:bg-slate-700 border border-slate-600 text-slate-300 hover:text-white rounded-full text-sm font-medium transition-all flex items-center gap-2 group cursor-pointer">
-                    <i data-lucide="home" class="w-4 h-4 group-hover:scale-110 transition-transform"></i>
-                    Home
-                </a>
-                <a href="https://www.paypal.com/donate/?business=6EN68NHUTM2KQ&no_recurring=0&item_name=Thanks+for+your+support+Amigo%21&currency_code=USD" target="_blank" class="px-5 py-2.5 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-full text-sm font-medium transition-all flex items-center gap-2 group">
-                    <i data-lucide="heart" class="w-4 h-4 text-pink-500 group-hover:scale-110 transition-transform"></i>
-                    Support Work
-                </a>
-            </div>
-        </div>
-    </footer>
+    <main id="main-content" class="max-w-6xl mx-auto px-4 py-8"></main>
 
     <script>
         // --- 1. ONTOLOGÍA Y DICCIONARIOS ---
@@ -132,7 +89,7 @@
             { id: 12, symbol: '𝅘𝅥𝅱', category: { es: 'Figuras', en: 'Notes' }, name: { es: 'Semifusa', en: 'Sixty-fourth Note' }, desc: { es: 'Duración de 1/16 de tiempo. Tiene cuatro corchetes.', en: 'Duration of 1/16 beat. Has four flags.' } },
             { id: 13, symbol: '𝄺', category: { es: 'Silencios', en: 'Rests' }, name: { es: 'Silencio de Cuadrada', en: 'Double Whole Rest' }, desc: { es: 'Pausa de 8 tiempos.', en: 'Pause of 8 beats.' } },
             { id: 14, symbol: '𝄻', category: { es: 'Silencios', en: 'Rests' }, name: { es: 'Silencio de Redonda', en: 'Whole Rest' }, desc: { es: 'Pausa de 4 tiempos. Se cuelga de la cuarta línea.', en: 'Pause of 4 beats. Hangs from the fourth line.' } },
-            { id: 15, symbol: '𝄼', category: { es: 'Silencios', en: 'Rests' }, name: { es: 'Silencio de Blanca', en: 'Half Rest' }, desc: { es: 'Pausa de 2 tiempos. Se apoya en la tercera línea.', en: 'Pause of 2 beats. Sits on the third line.' } },
+            { id: 15, symbol: '𝄼', category: { es: 'Silencios', en: 'Rests' }, name: { es: 'Silencio de Blanca', en: 'Half Rest' }, desc: { es: 'Pausa de 2 tiempos. Se apoya en la third línea.', en: 'Pause of 2 beats. Sits on the third line.' } },
             { id: 16, symbol: '𝄽', category: { es: 'Silencios', en: 'Rests' }, name: { es: 'Silencio de Negra', en: 'Quarter Rest' }, desc: { es: 'Pausa de 1 tiempo.', en: 'Pause of 1 beat.' } },
             { id: 17, symbol: '𝄾', category: { es: 'Silencios', en: 'Rests' }, name: { es: 'Silencio de Corchea', en: 'Eighth Rest' }, desc: { es: 'Pausa de 1/2 tiempo.', en: 'Pause of 1/2 beat.' } },
             { id: 18, symbol: '𝄿', category: { es: 'Silencios', en: 'Rests' }, name: { es: 'Silencio de Semicorchea', en: 'Sixteenth Rest' }, desc: { es: 'Pausa de 1/4 de tiempo.', en: 'Pause of 1/4 beat.' } },
@@ -175,4 +132,15 @@
             { id: 55, symbol: '8va', category: { es: 'Técnica', en: 'Technique' }, name: { es: 'Ottava Alta', en: 'Ottava Alta' }, desc: { es: 'Tocar una octava más alta.', en: 'Play an octave higher.' } },
             { id: 56, symbol: '8vb', category: { es: 'Técnica', en: 'Technique' }, name: { es: 'Ottava Bassa', en: 'Ottava Bassa' }, desc: { es: 'Tocar una octava más baja.', en: 'Play an octave lower.' } },
             { id: 57, symbol: 'Ped.', category: { es: 'Técnica', en: 'Technique' }, name: { es: 'Pedal (Piano)', en: 'Sustain Pedal' }, desc: { es: 'Pisar el pedal de resonancia.', en: 'Depress the sustain pedal.' } },
-            { id: 58, symbol: '𝆹', category: { es: 'Técnica', en: 'Technique' }, 
+            { id: 58, symbol: '𝆹', category: { es: 'Técnica', en: 'Technique' }, name: { es: 'Soltar Pedal', en: 'Release Pedal' }, desc: { es: 'Levantar el pedal de resonancia.', en: 'Release the sustain pedal.' } },
+            { id: 59, symbol: 'V', category: { es: 'Técnica', en: 'Technique' }, name: { es: 'Arco Arriba', en: 'Up Bow' }, desc: { es: 'Mover el arco hacia el talón.', en: 'Move the bow towards the frog.' } },
+            { id: 60, symbol: '𝆲', category: { es: 'Técnica', en: 'Technique' }, name: { es: 'Arco Abajo', en: 'Down Bow' }, desc: { es: 'Mover el arco hacia la punta.', en: 'Move the bow towards the tip.' } },
+            { id: 61, symbol: '𝅪', category: { es: 'Articulaciones', en: 'Articulations' }, name: { es: 'Trémolo', en: 'Tremolo' }, desc: { es: 'Repetición rápida de una nota.', en: 'Rapid repetition of a single note.' } },
+            { id: 62, symbol: 'gliss.', category: { es: 'Articulaciones', en: 'Articulations' }, name: { es: 'Glissando', en: 'Glissando' }, desc: { es: 'Deslizamiento continuo entre alturas.', en: 'Continuous slide between pitches.' } },
+            { id: 63, symbol: '⁀', category: { es: 'Articulaciones', en: 'Articulations' }, name: { es: 'Ligadura de Expresión', en: 'Slur' }, desc: { es: 'Ejecutar unido y sin interrupción (legato).', en: 'Play connected and without interruption (legato).' } },
+            { id: 64, symbol: '‿', category: { es: 'Articulaciones', en: 'Articulations' }, name: { es: 'Ligadura de Prolongación', en: 'Tie' }, desc: { es: 'Suma el valor rítmico de notas de igual altura.', en: 'Adds the rhythmic value of notes of the same pitch.' } },
+            { id: 65, symbol: '≀', category: { es: 'Técnica', en: 'Technique' }, name: { es: 'Arpegio', en: 'Arpeggio' }, desc: { es: 'Notas tocadas en sucesión rápida.', en: 'Notes played in rapid succession.' } },
+            { id: 66, symbol: '∘', category: { es: 'Técnica', en: 'Technique' }, name: { es: 'Armónico', en: 'Harmonic' }, desc: { es: 'Ejecutar produciendo un sonido armónico.', en: 'Play producing a harmonic sound.' } },
+            { id: 67, symbol: '𝄒', category: { es: 'Articulaciones', en: 'Articulations' }, name: { es: 'Marca de Respiración', en: 'Breath Mark' }, desc: { es: 'Pausa breve para tomar aire, sin afectar el tempo estricto.', en: 'Brief pause to take a breath, without affecting strict tempo.' } },
+            { id: 68, symbol: '𝄓', category: { es: 'Forma', en: 'Form' }, name: { es: 'Cesura', en: 'Caesura' }, desc: { es: 'Pausa total e interrupción repentina del tiempo ("rieles").', en: 'Total pause and sudden interruption of time.' } },
+            { id: 69, symbol: '┌1.', category: { es: 'Forma', en: 'Form' }, name: { es: 'Casilla de 1ra Vez', en: 'Prima Volta' },
